@@ -4,6 +4,7 @@ extends Node
 ## ней. Никаких высот будущей трассы или данных других машин в сеть не идёт.
 
 const SENSOR_LENGTH: float = 300.0
+const DECISION_INTERVAL: float = 1.0 / 30.0
 
 # Конструктор PackedFloat32Array не является constant expression в GDScript 4.3.
 # Это неизменяемые для контроллера данные экземпляра, а не константа языка.
@@ -15,6 +16,7 @@ var car: Car
 var terrain: TerrainGenerator
 var network: NeuralNetwork
 var genome: Genome
+var decision_elapsed: float = DECISION_INTERVAL
 
 func setup(controlled_car: Car, terrain_node: TerrainGenerator, car_genome: Genome) -> void:
 	car = controlled_car
@@ -23,9 +25,16 @@ func setup(controlled_car: Car, terrain_node: TerrainGenerator, car_genome: Geno
 	network = NeuralNetwork.new()
 	network.configure(genome.layers, genome.genes, Config.activation_name)
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if car == null or not is_instance_valid(car) or car.dead or network == null:
 		return
+	# Физика остаётся на каждом тике. Сеть и семь raycast-сенсоров обновляются
+	# в 30 Гц: для управления машиной это достаточно, а 150 машин выполняют
+	# вдвое меньше дорогих запросов к PhysicsDirectSpaceState2D.
+	decision_elapsed += delta
+	if decision_elapsed < DECISION_INTERVAL:
+		return
+	decision_elapsed = fmod(decision_elapsed, DECISION_INTERVAL)
 	var inputs: PackedFloat32Array = _collect_inputs()
 	var outputs: PackedFloat32Array = network.forward(inputs)
 	var throttle: float = (outputs[0] + 1.0) * 0.5 if outputs.size() > 0 else 0.0

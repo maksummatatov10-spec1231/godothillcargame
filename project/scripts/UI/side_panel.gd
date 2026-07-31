@@ -120,10 +120,12 @@ func _add_physics_section(parent: VBoxContainer) -> void:
 	parent.add_child(section)
 	_add_numeric(section, "Масса кузова", "body_mass", 2.0, 20.0, 0.1)
 	_add_numeric(section, "Масса колеса", "wheel_mass", 0.4, 5.0, 0.1)
-	_add_numeric(section, "Мощность двигателя", "engine_torque", 10000.0, 100000.0, 1000.0)
+	_add_numeric(section, "Мощность двигателя", "engine_torque", 10000.0, 300000.0, 1000.0)
 	_add_numeric(section, "Макс. скорость колеса", "max_wheel_speed", 10.0, 100.0, 1.0)
 	_add_numeric(section, "Трение", "wheel_friction", 0.2, 8.0, 0.1)
-	_add_numeric(section, "Жёсткость оси", "axle_stiffness", 20.0, 300.0, 1.0)
+	_add_numeric(section, "Жёсткость подвески", "suspension_stiffness", 100.0, 2000.0, 10.0)
+	_add_numeric(section, "Демпфирование", "suspension_damping", 0.1, 30.0, 0.1)
+	_add_numeric(section, "Свободная длина пружины", "suspension_rest_length", 48.0, 66.0, 0.5)
 	_add_numeric(section, "Гравитация", "gravity", 600.0, 2600.0, 50.0)
 
 func _add_track_section(parent: VBoxContainer) -> void:

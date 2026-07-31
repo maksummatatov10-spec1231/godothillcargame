@@ -61,32 +61,36 @@ def main() -> None:
             rf'^\[node name="{wheel_name}" parent="\." instance=',
             f"{wheel_name} должен быть RigidBody2D-соседом, а не ребёнком кузова",
         )
-    for axle_name, wheel_name, axle_position in (
-        ("RearAxle", "RearWheel", "-34, 38"),
-        ("FrontAxle", "FrontWheel", "34, 38"),
+    for prefix, wheel_name, x_value in (
+        ("Rear", "RearWheel", "-34"),
+        ("Front", "FrontWheel", "34"),
     ):
-        require(
-            car_scene,
-            rf'^\[node name="{axle_name}" type="PinJoint2D" parent="\."\]$',
-            f"{axle_name} должен быть PinJoint2D под нейтральным Car",
+        guide_pattern = (
+            rf'\[node name="{prefix}Guide" type="GrooveJoint2D" parent="\."\]\n'
+            rf'position = Vector2\({x_value}, 12\)\n'
+            r'node_a = NodePath\("\.\./Chassis"\)\n'
+            rf'node_b = NodePath\("\.\./{wheel_name}"\)\n'
+            r'length = 54\.0\ninitial_offset = 26\.0'
         )
         require(
             car_scene,
-            rf'\[node name="{axle_name}" type="PinJoint2D" parent="\."\]\nposition = Vector2\({axle_position}\)',
-            f"{axle_name} должен стоять в центре соответствующего колеса",
+            guide_pattern,
+            f"{prefix}Guide должен направлять {wheel_name} по вертикали",
+        )
+        spring_pattern = (
+            rf'\[node name="{prefix}Spring" type="DampedSpringJoint2D" parent="\."\]\n'
+            rf'position = Vector2\({x_value}, -10\)\n'
+            r'node_a = NodePath\("\.\./Chassis"\)\n'
+            rf'node_b = NodePath\("\.\./{wheel_name}"\)\n'
+            r'length = 48\.0\nrest_length = 58\.0\nstiffness = 750\.0\ndamping = 18\.0'
         )
         require(
             car_scene,
-            rf'\[node name="{axle_name}"[\s\S]*?node_a = NodePath\("\.\./Chassis"\)',
-            f"{axle_name} должен быть привязан к Chassis",
+            spring_pattern,
+            f"{prefix}Spring должен поддерживать {wheel_name} реальной пружиной",
         )
-        require(
-            car_scene,
-            rf'\[node name="{axle_name}"[\s\S]*?node_b = NodePath\("\.\./{wheel_name}"\)',
-            f"{axle_name} должен быть привязан к {wheel_name}",
-        )
-    if "DampedSpringJoint2D" in car_scene:
-        fail("DampedSpringJoint2D без линейной направляющей снова допускает разъезд колёс")
+    if "PinJoint2D" in car_scene:
+        fail("PinJoint2D фиксирует колесо намертво и не оставляет хода подвески")
     if re.search(r'parent="Chassis" instance=.*Wheel', car_scene):
         fail("колесо снова вложено в физический кузов")
     require(wheel_scene, r'continuous_cd = 2', "Wheel должен использовать непрерывную коллизию")
@@ -101,12 +105,17 @@ def main() -> None:
         r'car\.position = Vector2\(spawn_x, spawn_y\)\s*\n\s*vehicle_parent\.add_child\(car\)',
         "позиция ИИ-машины должна задаваться до add_child",
     )
-    require(config, r'var axle_stiffness: float = 110\.0', "жёсткость PinJoint2D должна быть задана")
+    require(config, r'var engine_torque: float = 180000\.0', "базовая тяга двигателя должна быть повышена")
+    require(config, r'var suspension_stiffness: float = 750\.0', "жёсткость подвески должна быть задана")
+    require(config, r'var suspension_damping: float = 18\.0', "демпфирование подвески должно быть задано")
+    require(config, r'var suspension_rest_length: float = 58\.0', "свободная длина пружины должна быть задана")
     car_script = without_comments((root / "scripts/car.gd").read_text(encoding="utf-8"))
-    require(car_script, r'var front_axle: PinJoint2D', "Car должен хранить переднюю ось PinJoint2D")
-    require(car_script, r'var rear_axle: PinJoint2D', "Car должен хранить заднюю ось PinJoint2D")
-    require(car_script, r'front_axle\.softness = axle_softness', "передняя ось должна получать физическую softness")
-    require(car_script, r'rear_axle\.softness = axle_softness', "задняя ось должна получать физическую softness")
+    require(car_script, r'var front_guide: GrooveJoint2D', "Car должен хранить переднюю направляющую")
+    require(car_script, r'var rear_guide: GrooveJoint2D', "Car должен хранить заднюю направляющую")
+    require(car_script, r'var front_spring: DampedSpringJoint2D', "Car должен хранить переднюю пружину")
+    require(car_script, r'var rear_spring: DampedSpringJoint2D', "Car должен хранить заднюю пружину")
+    require(car_script, r'chassis\.apply_central_force', "тяга должна передаваться кузову вдоль поверхности")
+    require(car_script, r'die\("Машина перевернулась"\)', "переворот должен завершать заезд")
 
     if re.search(r'set_anchors_preset\(Control\.PRESET_(LEFT_WIDE|RIGHT_WIDE)\)', menu):
         fail("фиксированная карточка меню использует растягивающий LayoutPreset")
@@ -115,7 +124,7 @@ def main() -> None:
     require(main_script, r'active_game\.mode = selected_mode as Game\.Mode', "int должен явно приводиться к Game.Mode")
 
     print("ИНВАРИАНТЫ СЦЕН: успешно")
-    print("  Car: независимые кузов и колёса, оси PinJoint2D привязаны к правильным телам")
+    print("  Car: независимые кузов и колёса, GrooveJoint2D + пружины образуют подвеску")
     print("  spawn: позиция устанавливается до входа Joint2D в дерево")
     print("  UI: фиксированные карточки не используют растягивающие anchors")
 

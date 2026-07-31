@@ -3,6 +3,8 @@ extends Control
 ## Компактный рендер сети: толщина связи зависит от |веса|, зелёный —
 ## положительная связь, красный — отрицательная, заливка — активация.
 
+const REDRAW_INTERVAL: float = 1.0 / 30.0
+
 # PackedStringArray(...) нельзя объявить как const в GDScript 4.3: это вызов
 # конструктора, а не constant expression. Подписи малы и создаются раз на UI.
 var input_names: PackedStringArray = PackedStringArray([
@@ -11,8 +13,10 @@ var input_names: PackedStringArray = PackedStringArray([
 	"топливо", "дист."
 ])
 var output_names: PackedStringArray = PackedStringArray(["газ", "тормоз"])
+
 var network: NeuralNetwork
 var visible_network: bool = true
+var redraw_elapsed: float = 0.0
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(370.0, 260.0)
@@ -26,8 +30,14 @@ func set_network_visible(value: bool) -> void:
 	visible_network = value
 	visible = value
 
-func _process(_delta: float) -> void:
-	if visible_network:
+func _process(delta: float) -> void:
+	if not visible_network or network == null:
+		return
+	# Активности сети меняются в ИИ-контроллере 30 раз в секунду. Рисовать их
+	# чаще бессмысленно и дорого при высоком FPS на мобильном устройстве.
+	redraw_elapsed += delta
+	if redraw_elapsed >= REDRAW_INTERVAL:
+		redraw_elapsed = fmod(redraw_elapsed, REDRAW_INTERVAL)
 		queue_redraw()
 
 func _draw() -> void:

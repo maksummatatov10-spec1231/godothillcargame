@@ -21,11 +21,12 @@ var coin_density: float = 0.78
 # Машина.
 var body_mass: float = 7.0
 var wheel_mass: float = 1.25
-var engine_torque: float = 47000.0
+var engine_torque: float = 180000.0
 var max_wheel_speed: float = 54.0
 var wheel_friction: float = 2.2
-# Чем больше значение, тем меньше PinJoint2D.softness и тем жёстче ось.
-var axle_stiffness: float = 110.0
+var suspension_stiffness: float = 750.0
+var suspension_damping: float = 18.0
+var suspension_rest_length: float = 58.0
 var gravity: float = BASE_GRAVITY
 var body_linear_damp: float = 0.16
 var body_angular_damp: float = 1.35
@@ -117,13 +118,17 @@ func set_numeric_setting(setting_name: String, new_value: float) -> void:
 		"wheel_mass":
 			wheel_mass = clampf(new_value, 0.4, 5.0)
 		"engine_torque":
-			engine_torque = clampf(new_value, 10000.0, 100000.0)
+			engine_torque = clampf(new_value, 10000.0, 300000.0)
 		"max_wheel_speed":
 			max_wheel_speed = clampf(new_value, 10.0, 100.0)
 		"wheel_friction":
 			wheel_friction = clampf(new_value, 0.2, 8.0)
-		"axle_stiffness":
-			axle_stiffness = clampf(new_value, 20.0, 300.0)
+		"suspension_stiffness":
+			suspension_stiffness = clampf(new_value, 100.0, 2000.0)
+		"suspension_damping":
+			suspension_damping = clampf(new_value, 0.1, 30.0)
+		"suspension_rest_length":
+			suspension_rest_length = clampf(new_value, 48.0, 66.0)
 		"gravity":
 			gravity = clampf(new_value, 600.0, 2600.0)
 		"terrain_difficulty":
@@ -158,7 +163,9 @@ func get_numeric_setting(setting_name: String) -> float:
 		"engine_torque": result = engine_torque
 		"max_wheel_speed": result = max_wheel_speed
 		"wheel_friction": result = wheel_friction
-		"axle_stiffness": result = axle_stiffness
+		"suspension_stiffness": result = suspension_stiffness
+		"suspension_damping": result = suspension_damping
+		"suspension_rest_length": result = suspension_rest_length
 		"gravity": result = gravity
 		"terrain_difficulty": result = terrain_difficulty
 		"hill_height": result = hill_height

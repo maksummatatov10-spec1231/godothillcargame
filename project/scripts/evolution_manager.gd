@@ -10,6 +10,7 @@ signal statistics_changed(
 )
 
 const CAR_SCENE: PackedScene = preload("res://scenes/Car.tscn")
+const STATISTICS_INTERVAL: float = 0.10
 
 var terrain: TerrainGenerator
 var vehicle_parent: Node
@@ -24,6 +25,7 @@ var generation_average_fitness: float = 0.0
 var selected_index: int = -1
 var user_selected: bool = false
 var applied_time_scale: float = -1.0
+var statistics_elapsed: float = 0.0
 
 func setup(terrain_node: TerrainGenerator, parent_for_cars: Node) -> void:
 	terrain = terrain_node
@@ -32,7 +34,7 @@ func setup(terrain_node: TerrainGenerator, parent_for_cars: Node) -> void:
 	create_fresh_population()
 	_spawn_generation()
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	_apply_speed_if_needed()
 	if cars.is_empty():
 		return
@@ -54,15 +56,33 @@ func _physics_process(_delta: float) -> void:
 					if leader_index < 0 or car.max_distance_m > cars[leader_index].max_distance_m:
 						leader_index = index
 		index += 1
-	if leader_index >= 0 and not user_selected:
+	_update_leader_target(leader_index)
+	statistics_elapsed += delta
+	if statistics_elapsed >= STATISTICS_INTERVAL or alive_count == 0:
+		statistics_elapsed = 0.0
+		_emit_statistics(alive_count, current_best_distance)
+	if alive_count == 0:
+		_finish_generation()
+
+func _update_leader_target(leader_index: int) -> void:
+	if leader_index < 0:
+		return
+	var selected_is_dead: bool = selected_index < 0 or selected_index >= cars.size()
+	if not selected_is_dead:
+		var selected_car: Car = cars[selected_index]
+		selected_is_dead = not is_instance_valid(selected_car) or selected_car.dead
+	if user_selected and not selected_is_dead:
+		return
+	if selected_index != leader_index:
 		selected_index = leader_index
-	_update_target()
+		user_selected = false
+		_update_target()
+
+func _emit_statistics(alive_count: int, current_best_distance: float) -> void:
 	statistics_changed.emit(
 		generation, alive_count, cars.size(), current_best_distance,
 		best_distance_ever, current_best_fitness, generation_average_fitness
 	)
-	if alive_count == 0:
-		_finish_generation()
 
 func create_fresh_population() -> void:
 	genomes.clear()
@@ -112,13 +132,14 @@ func _spawn_generation() -> void:
 	cars.clear()
 	selected_index = -1
 	user_selected = false
+	statistics_elapsed = 0.0
 	var spawn_x: float = 120.0
 	var spawn_y: float = terrain.height_at(spawn_x) - 68.0 if terrain != null else 350.0
 	var index: int = 0
 	while index < genomes.size():
 		var car: Car = CAR_SCENE.instantiate() as Car
-		# PinJoint2D создаёт мировые точки крепления при входе в дерево. Сначала
-		# ставим нейтральную сборку, затем добавляем её — оси не увидят (0, 0).
+		# Суставы подвески создают мировые точки крепления при входе в дерево.
+		# Сначала ставим сборку, затем добавляем её — точки не увидят (0, 0).
 		car.position = Vector2(spawn_x, spawn_y)
 		vehicle_parent.add_child(car)
 		var alpha: float = 0.25
@@ -199,10 +220,11 @@ func _update_target() -> void:
 	while index < cars.size():
 		var car: Car = cars[index]
 		if is_instance_valid(car):
-			var is_selected: bool = index == selected_index
-			car.modulate = Color(0.82, 0.96, 1.0, 1.0)
-			if not is_selected:
-				car.modulate = Color(0.64, 0.87, 1.0, 0.25)
+				var is_selected: bool = index == selected_index
+				car.modulate = Color(0.82, 0.96, 1.0, 1.0)
+				car.set_visual_detail_enabled(is_selected)
+				if not is_selected:
+					car.modulate = Color(0.64, 0.87, 1.0, 0.25)
 		index += 1
 	var selected_car: Car = cars[selected_index]
 	if not is_instance_valid(selected_car):
