@@ -63,24 +63,18 @@ position = Vector2(-34, 38)
 [node name="FrontWheel" parent="." instance=ExtResource("2_wheel_scene")]
 position = Vector2(34, 38)
 
-[node name="RearSpring" type="DampedSpringJoint2D" parent="."]
-position = Vector2(-34, -4)
+[node name="RearAxle" type="PinJoint2D" parent="."]
+position = Vector2(-34, 38)
 node_a = NodePath("../Chassis")
 node_b = NodePath("../RearWheel")
-length = 42.0
-rest_length = 40.0
-stiffness = 110.0
-damping = 13.0
+softness = 0.01
 disable_collision = true
 
-[node name="FrontSpring" type="DampedSpringJoint2D" parent="."]
-position = Vector2(34, -4)
+[node name="FrontAxle" type="PinJoint2D" parent="."]
+position = Vector2(34, 38)
 node_a = NodePath("../Chassis")
 node_b = NodePath("../FrontWheel")
-length = 42.0
-rest_length = 40.0
-stiffness = 110.0
-damping = 13.0
+softness = 0.01
 disable_collision = true
 
 [node name="RearSuspensionVisual" type="Line2D" parent="."]

@@ -123,8 +123,7 @@ func _add_physics_section(parent: VBoxContainer) -> void:
 	_add_numeric(section, "Мощность двигателя", "engine_torque", 10000.0, 100000.0, 1000.0)
 	_add_numeric(section, "Макс. скорость колеса", "max_wheel_speed", 10.0, 100.0, 1.0)
 	_add_numeric(section, "Трение", "wheel_friction", 0.2, 8.0, 0.1)
-	_add_numeric(section, "Жёсткость подвески", "suspension_stiffness", 20.0, 300.0, 1.0)
-	_add_numeric(section, "Демпфирование", "suspension_damping", 1.0, 50.0, 0.5)
+	_add_numeric(section, "Жёсткость оси", "axle_stiffness", 20.0, 300.0, 1.0)
 	_add_numeric(section, "Гравитация", "gravity", 600.0, 2600.0, 50.0)
 
 func _add_track_section(parent: VBoxContainer) -> void:

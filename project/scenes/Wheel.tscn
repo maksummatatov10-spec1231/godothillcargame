@@ -9,6 +9,8 @@ radius = 30.0
 [node name="Wheel" type="RigidBody2D"]
 collision_layer = 2
 collision_mask = 1
+# Быстро вращающееся колесо не должно проскочить тонкий сегмент рельефа.
+continuous_cd = 2
 can_sleep = false
 script = ExtResource("1_wheel")
 

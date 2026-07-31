@@ -17,8 +17,10 @@ const FRONT_ANCHOR_LOCAL: Vector2 = Vector2(34.0, -4.0)
 var chassis: RigidBody2D
 var front_wheel: Wheel
 var rear_wheel: Wheel
-var front_spring: DampedSpringJoint2D
-var rear_spring: DampedSpringJoint2D
+# PinJoint2D фиксирует центр каждого колеса и разрешает ему свободно вращаться.
+# Это не даёт колесу уехать по дуге, как у DampedSpringJoint2D без направляющей.
+var front_axle: PinJoint2D
+var rear_axle: PinJoint2D
 var head_sensor: Area2D
 var engine_audio: AudioStreamPlayer2D
 var front_suspension_visual: Line2D
@@ -40,15 +42,15 @@ func _ready() -> void:
 	chassis = get_node_or_null("Chassis") as RigidBody2D
 	front_wheel = get_node_or_null("FrontWheel") as Wheel
 	rear_wheel = get_node_or_null("RearWheel") as Wheel
-	front_spring = get_node_or_null("FrontSpring") as DampedSpringJoint2D
-	rear_spring = get_node_or_null("RearSpring") as DampedSpringJoint2D
+	front_axle = get_node_or_null("FrontAxle") as PinJoint2D
+	rear_axle = get_node_or_null("RearAxle") as PinJoint2D
 	head_sensor = get_node_or_null("Chassis/HeadSensor") as Area2D
 	engine_audio = get_node_or_null("Chassis/EngineAudio") as AudioStreamPlayer2D
 	front_suspension_visual = get_node_or_null("FrontSuspensionVisual") as Line2D
 	rear_suspension_visual = get_node_or_null("RearSuspensionVisual") as Line2D
 	_configure_chassis()
 	_configure_wheels()
-	_configure_springs()
+	_configure_axles()
 	if head_sensor != null:
 		head_sensor.body_entered.connect(_on_head_sensor_body_entered)
 	if engine_audio != null and not ai_controlled:
@@ -73,18 +75,15 @@ func _configure_wheels() -> void:
 		rear_wheel.max_angular_speed = Config.max_wheel_speed
 		rear_wheel.set_visual_variant(0)
 
-func _configure_springs() -> void:
-	var rest_length: float = Config.suspension_length * 0.94
-	if front_spring != null:
-		front_spring.length = Config.suspension_length
-		front_spring.rest_length = rest_length
-		front_spring.stiffness = Config.suspension_stiffness
-		front_spring.damping = Config.suspension_damping
-	if rear_spring != null:
-		rear_spring.length = Config.suspension_length
-		rear_spring.rest_length = rest_length
-		rear_spring.stiffness = Config.suspension_stiffness
-		rear_spring.damping = Config.suspension_damping
+func _configure_axles() -> void:
+	# DampedSpringJoint2D задаёт только расстояние: колесо может описывать круг
+	# вокруг кузова и визуально «оторваться». PinJoint2D фиксирует ось, но всё
+	# ещё позволяет колесу крутиться. Softness — реальный параметр суставов.
+	var axle_softness: float = 1.0 / maxf(Config.axle_stiffness, 1.0)
+	if front_axle != null:
+		front_axle.softness = axle_softness
+	if rear_axle != null:
+		rear_axle.softness = axle_softness
 
 func initialise(spawn_x: float, is_ai: bool, tint: Color = Color.WHITE) -> void:
 	start_x = spawn_x

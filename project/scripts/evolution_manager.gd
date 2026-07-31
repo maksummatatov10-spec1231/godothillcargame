@@ -117,8 +117,8 @@ func _spawn_generation() -> void:
 	var index: int = 0
 	while index < genomes.size():
 		var car: Car = CAR_SCENE.instantiate() as Car
-		# DampedSpringJoint2D создаёт anchors при входе в дерево. Сначала ставим
-		# нейтральную сборку, затем добавляем её — иначе пружины тянут к (0, 0).
+		# PinJoint2D создаёт мировые точки крепления при входе в дерево. Сначала
+		# ставим нейтральную сборку, затем добавляем её — оси не увидят (0, 0).
 		car.position = Vector2(spawn_x, spawn_y)
 		vehicle_parent.add_child(car)
 		var alpha: float = 0.25
