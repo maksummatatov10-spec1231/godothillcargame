@@ -34,14 +34,16 @@ func _physics_process(_delta: float) -> void:
 
 func _collect_inputs() -> PackedFloat32Array:
 	var values: PackedFloat32Array = PackedFloat32Array()
-	values.append(clampf(car.linear_velocity.x / 1200.0, -1.0, 1.0))
-	values.append(clampf(car.linear_velocity.y / 1200.0, -1.0, 1.0))
-	values.append(clampf(car.angular_velocity / 18.0, -1.0, 1.0))
+	var chassis_velocity: Vector2 = car.body_linear_velocity()
+	values.append(clampf(chassis_velocity.x / 1200.0, -1.0, 1.0))
+	values.append(clampf(chassis_velocity.y / 1200.0, -1.0, 1.0))
+	values.append(clampf(car.body_angular_velocity() / 18.0, -1.0, 1.0))
 	values.append(car.body_angle_normalized())
-	var ground_y: float = car.global_position.y + 200.0
+	var chassis_position: Vector2 = car.body_global_position()
+	var ground_y: float = chassis_position.y + 200.0
 	if terrain != null:
-		ground_y = terrain.height_at(car.global_position.x)
-	values.append(clampf((ground_y - car.global_position.y) / 260.0, -1.0, 1.0))
+		ground_y = terrain.height_at(chassis_position.x)
+	values.append(clampf((ground_y - chassis_position.y) / 260.0, -1.0, 1.0))
 	values.append(1.0 if car.front_wheel != null and car.front_wheel.grounded else -1.0)
 	values.append(1.0 if car.rear_wheel != null and car.rear_wheel.grounded else -1.0)
 	var front_spin: float = 0.0
@@ -63,14 +65,18 @@ func _collect_inputs() -> PackedFloat32Array:
 func _read_sensor(angle_offset: float) -> float:
 	if car == null or not is_instance_valid(car):
 		return 1.0
-	var origin: Vector2 = car.global_position + Vector2(20.0, 12.0).rotated(car.rotation)
-	var direction: Vector2 = Vector2.RIGHT.rotated(car.rotation + angle_offset)
+	var chassis_position: Vector2 = car.body_global_position()
+	var chassis_rotation: float = car.body_rotation_radians()
+	var origin: Vector2 = chassis_position + Vector2(20.0, 12.0).rotated(chassis_rotation)
+	var direction: Vector2 = Vector2.RIGHT.rotated(chassis_rotation + angle_offset)
 	var target: Vector2 = origin + direction * SENSOR_LENGTH
 	var query: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.new()
 	query.from = origin
 	query.to = target
 	query.collision_mask = 1
-	var excluded: Array[RID] = [car.get_rid()]
+	var excluded: Array[RID] = []
+	if car.chassis != null:
+		excluded.append(car.chassis.get_rid())
 	if car.front_wheel != null:
 		excluded.append(car.front_wheel.get_rid())
 	if car.rear_wheel != null:

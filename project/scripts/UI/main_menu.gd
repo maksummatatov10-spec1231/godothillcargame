@@ -41,7 +41,9 @@ func _build_background() -> void:
 
 func _build_menu() -> void:
 	var panel: PanelContainer = PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_LEFT_WIDE)
+	# Фиксированная карточка: PRESET_LEFT_WIDE растягивает высоту по родителю
+	# и затем перезаписывает size, из-за чего кнопки уходили за нижний край.
+	panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	panel.position = Vector2(72.0, 105.0)
 	panel.size = Vector2(410.0, 510.0)
 	panel.add_theme_stylebox_override("panel", UIStyle.panel_style(UIStyle.PANEL_DARK, 22))
@@ -81,7 +83,8 @@ func _build_menu() -> void:
 
 func _build_settings() -> void:
 	settings_card = PanelContainer.new()
-	settings_card.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
+	# Обе оси anchor совпадают, поэтому размер не будет переписан после _ready().
+	settings_card.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	settings_card.position = Vector2(-420.0, 170.0)
 	settings_card.size = Vector2(350.0, 310.0)
 	settings_card.add_theme_stylebox_override("panel", UIStyle.panel_style(UIStyle.PANEL_DARK, 18))

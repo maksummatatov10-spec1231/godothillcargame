@@ -14,6 +14,6 @@ func set_target(new_target: Car) -> void:
 func _process(delta: float) -> void:
 	if target_car == null or not is_instance_valid(target_car):
 		return
-	var desired: Vector2 = target_car.global_position + Vector2(look_ahead, height_offset)
+	var desired: Vector2 = target_car.body_global_position() + Vector2(look_ahead, height_offset)
 	var blend: float = 1.0 - exp(-follow_rate * delta)
 	global_position = global_position.lerp(desired, blend)

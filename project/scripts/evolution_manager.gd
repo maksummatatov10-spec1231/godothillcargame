@@ -113,12 +113,14 @@ func _spawn_generation() -> void:
 	selected_index = -1
 	user_selected = false
 	var spawn_x: float = 120.0
-	var spawn_y: float = terrain.height_at(spawn_x) - 118.0 if terrain != null else 350.0
+	var spawn_y: float = terrain.height_at(spawn_x) - 68.0 if terrain != null else 350.0
 	var index: int = 0
 	while index < genomes.size():
 		var car: Car = CAR_SCENE.instantiate() as Car
+		# DampedSpringJoint2D создаёт anchors при входе в дерево. Сначала ставим
+		# нейтральную сборку, затем добавляем её — иначе пружины тянут к (0, 0).
+		car.position = Vector2(spawn_x, spawn_y)
 		vehicle_parent.add_child(car)
-		car.global_position = Vector2(spawn_x, spawn_y)
 		var alpha: float = 0.25
 		car.initialise(spawn_x, true, Color(0.64, 0.87, 1.0, alpha))
 		car.front_wheel.set_visual_variant(index % 3)

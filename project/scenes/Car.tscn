@@ -13,70 +13,82 @@ size = Vector2(142, 54)
 [sub_resource type="CircleShape2D" id="CircleShape2D_head"]
 radius = 15.0
 
-[node name="Car" type="RigidBody2D"]
+[node name="Car" type="Node2D"]
+script = ExtResource("1_car")
+
+[node name="Chassis" type="RigidBody2D" parent="."]
 collision_layer = 2
 collision_mask = 1
 continuous_cd = 2
-script = ExtResource("1_car")
+can_sleep = false
 
-[node name="BodyCollision" type="CollisionShape2D" parent="."]
-position = Vector2(0, 0)
+[node name="BodyCollision" type="CollisionShape2D" parent="Chassis"]
 shape = SubResource("RectangleShape2D_body")
 
-[node name="Chassis" type="Sprite2D" parent="."]
+[node name="ChassisSprite" type="Sprite2D" parent="Chassis"]
 position = Vector2(0, -3)
 texture = ExtResource("3_car_texture")
 scale = Vector2(0.3, 0.3)
 
-[node name="DriverBody" type="Sprite2D" parent="."]
+[node name="DriverBody" type="Sprite2D" parent="Chassis"]
 position = Vector2(-14, -35)
 texture = ExtResource("4_body_texture")
 scale = Vector2(0.52, 0.52)
 z_index = 1
 
-[node name="DriverHead" type="Sprite2D" parent="."]
+[node name="DriverHead" type="Sprite2D" parent="Chassis"]
 position = Vector2(-15, -56)
 texture = ExtResource("5_head_texture")
 scale = Vector2(0.13, 0.13)
 z_index = 2
 
-[node name="RearWheel" parent="." instance=ExtResource("2_wheel_scene")]
-position = Vector2(-52, 64)
-
-[node name="FrontWheel" parent="." instance=ExtResource("2_wheel_scene")]
-position = Vector2(52, 64)
-
-[node name="RearSpring" type="DampedSpringJoint2D" parent="."]
-position = Vector2(-52, 12)
-node_a = NodePath("..")
-node_b = NodePath("../RearWheel")
-length = 52.0
-rest_length = 48.0
-stiffness = 110.0
-damping = 13.0
-disable_collision = true
-
-[node name="FrontSpring" type="DampedSpringJoint2D" parent="."]
-position = Vector2(52, 12)
-node_a = NodePath("..")
-node_b = NodePath("../FrontWheel")
-length = 52.0
-rest_length = 48.0
-stiffness = 110.0
-damping = 13.0
-disable_collision = true
-
-[node name="HeadSensor" type="Area2D" parent="."]
+[node name="HeadSensor" type="Area2D" parent="Chassis"]
 collision_layer = 0
 collision_mask = 1
 monitoring = true
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="HeadSensor"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Chassis/HeadSensor"]
 position = Vector2(-15, -56)
 shape = SubResource("CircleShape2D_head")
 
-[node name="EngineAudio" type="AudioStreamPlayer2D" parent="."]
+[node name="EngineAudio" type="AudioStreamPlayer2D" parent="Chassis"]
 stream = ExtResource("6_engine")
 volume_db = -19.0
 max_distance = 2000.0
+
+[node name="RearWheel" parent="." instance=ExtResource("2_wheel_scene")]
+position = Vector2(-34, 38)
+
+[node name="FrontWheel" parent="." instance=ExtResource("2_wheel_scene")]
+position = Vector2(34, 38)
+
+[node name="RearSpring" type="DampedSpringJoint2D" parent="."]
+position = Vector2(-34, -4)
+node_a = NodePath("../Chassis")
+node_b = NodePath("../RearWheel")
+length = 42.0
+rest_length = 40.0
+stiffness = 110.0
+damping = 13.0
+disable_collision = true
+
+[node name="FrontSpring" type="DampedSpringJoint2D" parent="."]
+position = Vector2(34, -4)
+node_a = NodePath("../Chassis")
+node_b = NodePath("../FrontWheel")
+length = 42.0
+rest_length = 40.0
+stiffness = 110.0
+damping = 13.0
+disable_collision = true
+
+[node name="RearSuspensionVisual" type="Line2D" parent="."]
+width = 4.0
+default_color = Color(0.11, 0.18, 0.24, 0.9)
+z_index = -1
+
+[node name="FrontSuspensionVisual" type="Line2D" parent="."]
+width = 4.0
+default_color = Color(0.11, 0.18, 0.24, 0.9)
+z_index = -1

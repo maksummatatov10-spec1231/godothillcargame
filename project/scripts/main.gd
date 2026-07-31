@@ -36,7 +36,9 @@ func _start_game(selected_mode: int) -> void:
 		active_menu.queue_free()
 	active_menu = null
 	active_game = GAME_SCENE.instantiate() as Game
-	active_game.mode = selected_mode
+	# restart_requested переносит число через сигнал; GDScript 4.3 требует
+	# явное приведение int обратно к конкретному enum Game.Mode.
+	active_game.mode = selected_mode as Game.Mode
 	add_child(active_game)
 	active_game.restart_requested.connect(_restart_game)
 	active_game.menu_requested.connect(show_menu)

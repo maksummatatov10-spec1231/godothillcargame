@@ -74,10 +74,11 @@ func _start_manual() -> void:
 	manual_hud.menu_requested.connect(_return_to_menu)
 	_create_pause_menu()
 	var spawn_x: float = 120.0
-	var spawn_y: float = terrain.height_at(spawn_x) - 118.0
+	var spawn_y: float = terrain.height_at(spawn_x) - 68.0
 	manual_car = CAR_SCENE.instantiate() as Car
+	# Joint2D фиксирует anchors при входе в дерево, поэтому задаём position до add_child().
+	manual_car.position = Vector2(spawn_x, spawn_y)
 	add_child(manual_car)
-	manual_car.global_position = Vector2(spawn_x, spawn_y)
 	manual_car.initialise(spawn_x, false)
 	manual_car.died.connect(_on_manual_car_died)
 	manual_car.fuel_changed.connect(_on_manual_fuel_changed)
@@ -132,7 +133,7 @@ func _create_audio_players() -> void:
 func _process(_delta: float) -> void:
 	var focus_car: Car = camera_controller.target_car if camera_controller != null else null
 	if focus_car != null and is_instance_valid(focus_car) and terrain != null:
-		terrain.ensure_ahead(focus_car.global_position.x)
+		terrain.ensure_ahead(focus_car.body_global_position().x)
 	if mode == Mode.MANUAL and manual_car != null and is_instance_valid(manual_car):
 		_spawn_manual_content_ahead()
 		_cleanup_old_content()
@@ -157,7 +158,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _spawn_manual_content_ahead() -> void:
 	if manual_car == null or terrain == null:
 		return
-	var desired_x: float = manual_car.global_position.x + 5000.0
+	var desired_x: float = manual_car.body_global_position().x + 5000.0
 	while next_pickup_x < desired_x:
 		var density_roll: float = pickup_random.randf()
 		if density_roll < Config.fuel_density * 0.17:
@@ -194,7 +195,7 @@ func _spawn_checkpoint(world_x: float) -> void:
 func _cleanup_old_content() -> void:
 	if manual_car == null:
 		return
-	var cutoff_x: float = manual_car.global_position.x - 1200.0
+	var cutoff_x: float = manual_car.body_global_position().x - 1200.0
 	for item: Node in pickup_root.get_children():
 		var world_item: Node2D = item as Node2D
 		if world_item != null and world_item.global_position.x < cutoff_x:
