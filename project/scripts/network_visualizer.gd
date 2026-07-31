@@ -3,13 +3,14 @@ extends Control
 ## Компактный рендер сети: толщина связи зависит от |веса|, зелёный —
 ## положительная связь, красный — отрицательная, заливка — активация.
 
-const INPUT_NAMES: PackedStringArray = PackedStringArray([
+# PackedStringArray(...) нельзя объявить как const в GDScript 4.3: это вызов
+# конструктора, а не constant expression. Подписи малы и создаются раз на UI.
+var input_names: PackedStringArray = PackedStringArray([
 	"Vx", "Vy", "ω", "угол", "высота", "кол. П", "кол. З", "ω П", "ω З",
 	"луч 1", "луч 2", "луч 3", "луч 4", "луч 5", "луч 6", "луч 7",
 	"топливо", "дист."
 ])
-const OUTPUT_NAMES: PackedStringArray = PackedStringArray(["газ", "тормоз"])
-
+var output_names: PackedStringArray = PackedStringArray(["газ", "тормоз"])
 var network: NeuralNetwork
 var visible_network: bool = true
 
@@ -83,18 +84,18 @@ func _draw() -> void:
 			fill.a = 0.35 + minf(0.65, absf(value))
 			draw_circle(coordinates[node_layer][node_index], 5.1, fill)
 			draw_arc(coordinates[node_layer][node_index], 5.1, 0.0, TAU, 16, UIStyle.INK, 0.9, true)
-			if node_layer == 0 and node_index < INPUT_NAMES.size():
+			if node_layer == 0 and node_index < input_names.size():
 				var input_label_pos: Vector2 = coordinates[node_layer][node_index]
 				input_label_pos += Vector2(-32.0, 3.5)
 				draw_string(
-					font, input_label_pos, INPUT_NAMES[node_index],
+					font, input_label_pos, input_names[node_index],
 					HORIZONTAL_ALIGNMENT_LEFT, 30.0, 8, UIStyle.MUTED
 				)
-			elif node_layer == layer_count - 1 and node_index < OUTPUT_NAMES.size():
+			elif node_layer == layer_count - 1 and node_index < output_names.size():
 				var output_label_pos: Vector2 = coordinates[node_layer][node_index]
 				output_label_pos += Vector2(9.0, 3.5)
 				draw_string(
-					font, output_label_pos, OUTPUT_NAMES[node_index],
+					font, output_label_pos, output_names[node_index],
 					HORIZONTAL_ALIGNMENT_LEFT, 42.0, 9, UIStyle.INK
 				)
 			node_index += 1

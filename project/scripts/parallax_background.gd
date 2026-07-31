@@ -1,4 +1,5 @@
-class_name ParallaxBackground
+# ParallaxBackground — встроенный класс Godot, поэтому своё имя не повторяем.
+class_name HillParallaxBackdrop
 extends Parallax2D
 ## Два слоя из архива: дальние горы движутся медленнее камеры, облака — ещё
 ## медленнее. Повтор по X не оставляет пустого неба на длинной трассе.

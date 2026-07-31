@@ -53,13 +53,13 @@ func _build_metrics() -> void:
 
 func _build_actions() -> void:
 	var gear: Button = UIStyle.make_button("⚙", Color("c9ddf0"))
-	gear.set_anchors_preset(Control.PRESET_RIGHT_TOP)
+	gear.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	gear.position = Vector2(-72.0, 22.0)
 	gear.size = Vector2(48.0, 42.0)
 	gear.pressed.connect(_on_settings)
 	add_child(gear)
 	var pause: Button = UIStyle.make_button("Ⅱ", UIStyle.ACCENT)
-	pause.set_anchors_preset(Control.PRESET_RIGHT_TOP)
+	pause.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	pause.position = Vector2(-128.0, 22.0)
 	pause.size = Vector2(48.0, 42.0)
 	pause.pressed.connect(_on_pause)
@@ -77,7 +77,7 @@ func _build_actions() -> void:
 
 func _build_network() -> void:
 	network_view = NETWORK_SCENE.instantiate() as NetworkVisualizer
-	network_view.set_anchors_preset(Control.PRESET_RIGHT_BOTTOM)
+	network_view.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	network_view.position = Vector2(-392.0, -282.0)
 	network_view.size = Vector2(370.0, 260.0)
 	add_child(network_view)

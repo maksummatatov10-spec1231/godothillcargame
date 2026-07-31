@@ -22,10 +22,11 @@ const COIN_TEXTURES: Array[Texture2D] = [
 	preload("res://assets/sprites/pickups/Coin25.png"),
 	preload("res://assets/sprites/pickups/Coin50.png")
 ]
-const COIN_VALUES: PackedInt32Array = PackedInt32Array([5, 10, 25, 50])
 const COIN_SOUND: AudioStream = preload("res://assets/sounds/Coin.wav")
 const FUEL_SOUND: AudioStream = preload("res://assets/sounds/Fuel.wav")
 
+# PackedInt32Array(...) не допускается в const в GDScript 4.3.
+var coin_values: PackedInt32Array = PackedInt32Array([5, 10, 25, 50])
 var mode: Mode = Mode.MANUAL
 var terrain: TerrainGenerator
 var camera_controller: CameraController
@@ -171,11 +172,11 @@ func _spawn_manual_content_ahead() -> void:
 func _spawn_coin(world_x: float) -> void:
 	var coin: Coin = COIN_SCENE.instantiate() as Coin
 	pickup_root.add_child(coin)
-	var variant: int = pickup_random.randi_range(0, COIN_VALUES.size() - 1)
+	var variant: int = pickup_random.randi_range(0, coin_values.size() - 1)
 	var item_y: float = terrain.height_at(world_x)
 	item_y -= pickup_random.randf_range(62.0, 108.0)
 	coin.global_position = Vector2(world_x, item_y)
-	coin.configure(COIN_VALUES[variant], COIN_TEXTURES[variant])
+	coin.configure(coin_values[variant], COIN_TEXTURES[variant])
 	coin.collected.connect(_on_coin_collected)
 
 func _spawn_fuel(world_x: float) -> void:

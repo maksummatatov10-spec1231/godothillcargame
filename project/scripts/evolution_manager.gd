@@ -149,10 +149,9 @@ func _finish_generation() -> void:
 		return
 	var total_fitness: float = 0.0
 	current_best_fitness = 0.0
-	var genome: Genome
-	for genome in genomes:
-		total_fitness += genome.fitness
-		current_best_fitness = maxf(current_best_fitness, genome.fitness)
+	for genome_item: Genome in genomes:
+		total_fitness += genome_item.fitness
+		current_best_fitness = maxf(current_best_fitness, genome_item.fitness)
 	generation_average_fitness = total_fitness / float(genomes.size())
 	var ranked: Array[Genome] = genomes.duplicate()
 	ranked.sort_custom(_sort_by_fitness)

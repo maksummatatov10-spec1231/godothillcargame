@@ -3,10 +3,13 @@ extends Node
 ## Контроллер-сенсор: он видит только состояние своей машины и семь лучей перед
 ## ней. Никаких высот будущей трассы или данных других машин в сеть не идёт.
 
-const SENSOR_ANGLES: PackedFloat32Array = PackedFloat32Array([
+const SENSOR_LENGTH: float = 300.0
+
+# Конструктор PackedFloat32Array не является constant expression в GDScript 4.3.
+# Это неизменяемые для контроллера данные экземпляра, а не константа языка.
+var sensor_angles: PackedFloat32Array = PackedFloat32Array([
 	0.20, 0.36, 0.52, 0.68, 0.84, 1.00, 1.16
 ])
-const SENSOR_LENGTH: float = 300.0
 
 var car: Car
 var terrain: TerrainGenerator
@@ -50,8 +53,8 @@ func _collect_inputs() -> PackedFloat32Array:
 	values.append(clampf(front_spin / Config.max_wheel_speed, -1.0, 1.0))
 	values.append(clampf(rear_spin / Config.max_wheel_speed, -1.0, 1.0))
 	var ray_index: int = 0
-	while ray_index < SENSOR_ANGLES.size():
-		values.append(_read_sensor(SENSOR_ANGLES[ray_index]))
+	while ray_index < sensor_angles.size():
+		values.append(_read_sensor(sensor_angles[ray_index]))
 		ray_index += 1
 	values.append(car.fuel / Car.FULL_FUEL)
 	values.append(clampf(car.max_distance_m / 1000.0, 0.0, 1.0))

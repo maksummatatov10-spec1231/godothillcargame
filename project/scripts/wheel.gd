@@ -17,10 +17,11 @@ func _ready() -> void:
 	angular_damp = 0.03
 	contact_monitor = true
 	max_contacts_reported = 8
-	var material: PhysicsMaterial = PhysicsMaterial.new()
-	material.friction = Config.wheel_friction
-	material.bounce = 0.02
-	physics_material_override = material
+	# CanvasItem уже имеет свойство material; другое имя исключает shadow warning.
+	var wheel_physics_material: PhysicsMaterial = PhysicsMaterial.new()
+	wheel_physics_material.friction = Config.wheel_friction
+	wheel_physics_material.bounce = 0.02
+	physics_material_override = wheel_physics_material
 
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	grounded = state.get_contact_count() > 0

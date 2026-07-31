@@ -1,5 +1,16 @@
 # История версий
 
+## v1.0.1 — 31.07.2026
+
+Исправление ошибок компиляции, обнаруженных при первом открытии проекта в настоящем Godot 4.3.
+
+- Исправлены все три несуществующих `Control.LayoutPreset`: `PRESET_LEFT_BOTTOM` → `PRESET_BOTTOM_LEFT`, `PRESET_RIGHT_BOTTOM` → `PRESET_BOTTOM_RIGHT`, `PRESET_RIGHT_TOP` → `PRESET_TOP_RIGHT`. Причина подтверждена `Control.xml` Godot 4.3: корректные имена перечислены там буквально.
+- `PackedFloat32Array(...)`, `PackedStringArray(...)` и `PackedInt32Array(...)` перенесены из `const` в типизированные переменные экземпляра. В 4.3 вызов конструктора не является `constant expression`.
+- Удалено двойное объявление `genome` перед `for genome in genomes`, которое приводило к Parse Error в `evolution_manager.gd`.
+- `ParallaxBackground` переименован в `HillParallaxBackdrop`: первое имя уже занято встроенным классом Godot.
+- Локальная `material` в `wheel.gd` переименована в `wheel_physics_material`, поэтому предупреждение `SHADOWED_VARIABLE_BASE_CLASS` устранено, а не проигнорировано.
+- Добавлена `tools/gd43_compatibility_check.py` и проверена намеренно сломанными временными копиями проекта. Она ловит все пять перечисленных классов дефектов и исключает комментарии до анализа.
+
 ## v1.0.0 — 31.07.2026
 
 Первый релиз 2D-проекта **Hill Motion: Эволюция**.
