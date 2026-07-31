@@ -1,0 +1,4 @@
+.godot/
+project/.godot/
+*.import
+*.import.md5

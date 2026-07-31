@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/network_visualizer.gd" id="1_visualizer"]
+
+[node name="NetworkVisualizer" type="Control"]
+custom_minimum_size = Vector2(370, 260)
+script = ExtResource("1_visualizer")
