@@ -82,7 +82,7 @@ def main() -> None:
             rf'position = Vector2\({x_value}, -10\)\n'
             r'node_a = NodePath\("\.\./Chassis"\)\n'
             rf'node_b = NodePath\("\.\./{wheel_name}"\)\n'
-            r'length = 48\.0\nrest_length = 58\.0\nstiffness = 750\.0\ndamping = 18\.0'
+            r'length = 48\.0\nrest_length = 58\.0\nstiffness = 800\.0\ndamping = 18\.0'
         )
         require(
             car_scene,
@@ -105,8 +105,8 @@ def main() -> None:
         r'car\.position = Vector2\(spawn_x, spawn_y\)\s*\n\s*vehicle_parent\.add_child\(car\)',
         "позиция ИИ-машины должна задаваться до add_child",
     )
-    require(config, r'var engine_torque: float = 120000\.0', "базовая тяга двигателя должна быть повышена")
-    require(config, r'var suspension_stiffness: float = 750\.0', "жёсткость подвески должна быть задана")
+    require(config, r'var engine_torque: float = 105000\.0', "базовая тяга двигателя должна быть повышена")
+    require(config, r'var suspension_stiffness: float = 800\.0', "жёсткость подвески должна быть задана")
     require(config, r'var suspension_damping: float = 18\.0', "демпфирование подвески должно быть задано")
     require(config, r'var suspension_rest_length: float = 58\.0', "свободная длина пружины должна быть задана")
     car_script = without_comments((root / "scripts/car.gd").read_text(encoding="utf-8"))

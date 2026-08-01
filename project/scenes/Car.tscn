@@ -8,8 +8,9 @@
 [ext_resource type="AudioStream" path="res://assets/sounds/EngineSound.ogg" id="6_engine"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-# Коллизия короче спрайта: кузов не цепляется бампером за малые гребни.
-size = Vector2(112, 42)
+# Компромисс: кузов заметно участвует в столкновениях, но не цепляется
+# бампером за каждый малый гребень.
+size = Vector2(124, 46)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_head"]
 radius = 15.0
@@ -26,6 +27,11 @@ can_sleep = false
 [node name="BodyCollision" type="CollisionShape2D" parent="Chassis"]
 position = Vector2(0, -2)
 shape = SubResource("RectangleShape2D_body")
+
+# Физическая форма головы не позволяет ей пройти сквозь стену или землю.
+[node name="HeadCollision" type="CollisionShape2D" parent="Chassis"]
+position = Vector2(-15, -56)
+shape = SubResource("CircleShape2D_head")
 
 [node name="ChassisSprite" type="Sprite2D" parent="Chassis"]
 position = Vector2(0, -3)
@@ -87,7 +93,7 @@ node_a = NodePath("../Chassis")
 node_b = NodePath("../RearWheel")
 length = 48.0
 rest_length = 58.0
-stiffness = 750.0
+stiffness = 800.0
 damping = 18.0
 disable_collision = true
 
@@ -97,7 +103,7 @@ node_a = NodePath("../Chassis")
 node_b = NodePath("../FrontWheel")
 length = 48.0
 rest_length = 58.0
-stiffness = 750.0
+stiffness = 800.0
 damping = 18.0
 disable_collision = true
 

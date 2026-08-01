@@ -14,7 +14,7 @@ const AI_BODY: Texture2D = preload("res://assets/sprites/characters/Body2.png")
 const AI_HEAD: Texture2D = preload("res://assets/sprites/characters/Head2.png")
 const REAR_SPRING_TOP_LOCAL: Vector2 = Vector2(-34.0, -10.0)
 const FRONT_SPRING_TOP_LOCAL: Vector2 = Vector2(34.0, -10.0)
-const FRONT_DRIVE_RATIO: float = 0.58
+const FRONT_DRIVE_RATIO: float = 0.62
 const TRACTION_ASSIST_RATIO: float = 1.0
 const FLIP_ANGLE_LIMIT: float = 2.181661565
 const FLIP_CONTACT_TIME: float = 0.25
@@ -28,6 +28,7 @@ var rear_guide: GrooveJoint2D
 var front_spring: DampedSpringJoint2D
 var rear_spring: DampedSpringJoint2D
 var head_sensor: Area2D
+var head_probe_shape: CircleShape2D
 var engine_audio: AudioStreamPlayer2D
 var front_suspension_visual: Line2D
 var rear_suspension_visual: Line2D
@@ -56,6 +57,8 @@ func _ready() -> void:
 	front_spring = get_node_or_null("FrontSpring") as DampedSpringJoint2D
 	rear_spring = get_node_or_null("RearSpring") as DampedSpringJoint2D
 	head_sensor = get_node_or_null("Chassis/HeadSensor") as Area2D
+	head_probe_shape = CircleShape2D.new()
+	head_probe_shape.radius = 17.0
 	engine_audio = get_node_or_null("Chassis/EngineAudio") as AudioStreamPlayer2D
 	front_suspension_visual = get_node_or_null("FrontSuspensionVisual") as Line2D
 	rear_suspension_visual = get_node_or_null("RearSuspensionVisual") as Line2D
@@ -76,10 +79,10 @@ func _configure_chassis() -> void:
 	chassis.gravity_scale = Config.gravity / Config.BASE_GRAVITY
 	chassis.linear_damp = Config.body_linear_damp
 	chassis.angular_damp = Config.body_angular_damp
-	# Центр массы выше геометрического центра: машина реагирует на кочки и
-	# тягу, а не стоит неестественно устойчиво на любой горке.
+	# Центр чуть выше геометрического: переворот возможен, но кузов не кувыркается
+	# от каждой мелкой неровности.
 	chassis.center_of_mass_mode = RigidBody2D.CENTER_OF_MASS_MODE_CUSTOM
-	chassis.center_of_mass = Vector2(0.0, -7.0)
+	chassis.center_of_mass = Vector2(0.0, -3.0)
 	chassis.can_sleep = false
 
 func _configure_wheels() -> void:
@@ -248,9 +251,12 @@ func _update_flip_failure(delta: float) -> void:
 		upside_down_time = 0.0
 
 func _check_head_overlap(delta: float) -> void:
-	if head_sensor == null or not head_sensor.monitoring:
+	if chassis == null:
 		return
-	var tilted_enough: bool = absf(wrapf(body_rotation_radians(), -PI, PI)) > 1.0
+	# Area2D покрывает обычный контакт. Shape query с margin ловит касание
+	# головой стены, где физическая форма Chassis остановила проникновение и
+	# Area2D может не получить body_entered из-за отсутствия перекрытия.
+	var tilted_enough: bool = absf(wrapf(body_rotation_radians(), -PI, PI)) > 0.65
 	if not tilted_enough:
 		head_probe_elapsed = 0.0
 		return
@@ -258,12 +264,33 @@ func _check_head_overlap(delta: float) -> void:
 	if head_probe_elapsed < HEAD_OVERLAP_INTERVAL:
 		return
 	head_probe_elapsed = fmod(head_probe_elapsed, HEAD_OVERLAP_INTERVAL)
-	var overlapping_bodies: Array[Node2D] = head_sensor.get_overlapping_bodies()
-	for other_body: Node2D in overlapping_bodies:
-		var collision_object: CollisionObject2D = other_body as CollisionObject2D
-		if collision_object != null and collision_object.collision_layer & 1:
-			die("Водитель коснулся земли")
-			return
+	if head_sensor != null and head_sensor.monitoring:
+		var overlapping_bodies: Array[Node2D] = head_sensor.get_overlapping_bodies()
+		for other_body: Node2D in overlapping_bodies:
+			var collision_object: CollisionObject2D = other_body as CollisionObject2D
+			if collision_object != null and collision_object.collision_layer & 1:
+				die("Водитель коснулся земли")
+				return
+	if _head_touches_terrain():
+		die("Водитель коснулся препятствия")
+
+func _head_touches_terrain() -> bool:
+	if head_probe_shape == null or chassis == null:
+		return false
+	var query: PhysicsShapeQueryParameters2D = PhysicsShapeQueryParameters2D.new()
+	query.shape = head_probe_shape
+	query.transform = Transform2D(0.0, chassis.to_global(Vector2(-15.0, -56.0)))
+	query.collision_mask = 1
+	query.margin = 2.0
+	var excluded: Array[RID] = [chassis.get_rid()]
+	if front_wheel != null:
+		excluded.append(front_wheel.get_rid())
+	if rear_wheel != null:
+		excluded.append(rear_wheel.get_rid())
+	query.exclude = excluded
+	var space_state: PhysicsDirectSpaceState2D = chassis.get_world_2d().direct_space_state
+	var hits: Array = space_state.intersect_shape(query, 1)
+	return not hits.is_empty()
 
 func _update_engine_audio(delta: float) -> void:
 	if engine_audio == null or ai_controlled:

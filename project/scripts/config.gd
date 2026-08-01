@@ -21,17 +21,17 @@ var coin_density: float = 0.78
 var track_length_m: float = 0.0
 
 # Машина.
-var body_mass: float = 7.0
+var body_mass: float = 8.2
 var wheel_mass: float = 1.25
-var engine_torque: float = 120000.0
+var engine_torque: float = 105000.0
 var max_wheel_speed: float = 54.0
 var wheel_friction: float = 2.2
-var suspension_stiffness: float = 750.0
+var suspension_stiffness: float = 800.0
 var suspension_damping: float = 18.0
 var suspension_rest_length: float = 58.0
 var gravity: float = BASE_GRAVITY
 var body_linear_damp: float = 0.16
-var body_angular_damp: float = 0.58
+var body_angular_damp: float = 0.78
 
 # Эволюция.
 var evolution_population_size: int = 150
