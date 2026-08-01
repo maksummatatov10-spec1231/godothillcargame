@@ -15,9 +15,10 @@ const AI_HEAD: Texture2D = preload("res://assets/sprites/characters/Head2.png")
 const REAR_SPRING_TOP_LOCAL: Vector2 = Vector2(-34.0, -10.0)
 const FRONT_SPRING_TOP_LOCAL: Vector2 = Vector2(34.0, -10.0)
 const FRONT_DRIVE_RATIO: float = 0.58
-const TRACTION_ASSIST_RATIO: float = 0.85
+const TRACTION_ASSIST_RATIO: float = 1.0
 const FLIP_ANGLE_LIMIT: float = 2.181661565
 const FLIP_CONTACT_TIME: float = 0.25
+const HEAD_OVERLAP_INTERVAL: float = 0.05
 
 var chassis: RigidBody2D
 var front_wheel: Wheel
@@ -39,6 +40,7 @@ var max_distance_m: float = 0.0
 var life_time: float = 0.0
 var idle_time: float = 0.0
 var upside_down_time: float = 0.0
+var head_probe_elapsed: float = 0.0
 var dead: bool = false
 var ai_controlled: bool = false
 var visual_detail_enabled: bool = true
@@ -74,6 +76,10 @@ func _configure_chassis() -> void:
 	chassis.gravity_scale = Config.gravity / Config.BASE_GRAVITY
 	chassis.linear_damp = Config.body_linear_damp
 	chassis.angular_damp = Config.body_angular_damp
+	# Центр массы выше геометрического центра: машина реагирует на кочки и
+	# тягу, а не стоит неестественно устойчиво на любой горке.
+	chassis.center_of_mass_mode = RigidBody2D.CENTER_OF_MASS_MODE_CUSTOM
+	chassis.center_of_mass = Vector2(0.0, -7.0)
 	chassis.can_sleep = false
 
 func _configure_wheels() -> void:
@@ -177,7 +183,12 @@ func _physics_process(delta: float) -> void:
 	var signed_drive: float = throttle_input - brake_input
 	_apply_engine_drive(signed_drive, delta)
 	_update_flip_failure(delta)
-	var consumption: float = 0.25 + absf(signed_drive) * 1.08
+	if dead:
+		return
+	_check_head_overlap(delta)
+	if dead:
+		return
+	var consumption: float = (0.25 + absf(signed_drive) * 1.08) * 3.0
 	fuel = maxf(0.0, fuel - consumption * delta)
 	fuel_changed.emit(fuel, FULL_FUEL)
 	var distance_now: float = current_distance_m()
@@ -235,6 +246,24 @@ func _update_flip_failure(delta: float) -> void:
 			die("Машина перевернулась")
 	else:
 		upside_down_time = 0.0
+
+func _check_head_overlap(delta: float) -> void:
+	if head_sensor == null or not head_sensor.monitoring:
+		return
+	var tilted_enough: bool = absf(wrapf(body_rotation_radians(), -PI, PI)) > 1.0
+	if not tilted_enough:
+		head_probe_elapsed = 0.0
+		return
+	head_probe_elapsed += delta
+	if head_probe_elapsed < HEAD_OVERLAP_INTERVAL:
+		return
+	head_probe_elapsed = fmod(head_probe_elapsed, HEAD_OVERLAP_INTERVAL)
+	var overlapping_bodies: Array[Node2D] = head_sensor.get_overlapping_bodies()
+	for other_body: Node2D in overlapping_bodies:
+		var collision_object: CollisionObject2D = other_body as CollisionObject2D
+		if collision_object != null and collision_object.collision_layer & 1:
+			die("Водитель коснулся земли")
+			return
 
 func _update_engine_audio(delta: float) -> void:
 	if engine_audio == null or ai_controlled:

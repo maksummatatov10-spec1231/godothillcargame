@@ -105,7 +105,7 @@ def main() -> None:
         r'car\.position = Vector2\(spawn_x, spawn_y\)\s*\n\s*vehicle_parent\.add_child\(car\)',
         "позиция ИИ-машины должна задаваться до add_child",
     )
-    require(config, r'var engine_torque: float = 180000\.0', "базовая тяга двигателя должна быть повышена")
+    require(config, r'var engine_torque: float = 120000\.0', "базовая тяга двигателя должна быть повышена")
     require(config, r'var suspension_stiffness: float = 750\.0', "жёсткость подвески должна быть задана")
     require(config, r'var suspension_damping: float = 18\.0', "демпфирование подвески должно быть задано")
     require(config, r'var suspension_rest_length: float = 58\.0', "свободная длина пружины должна быть задана")

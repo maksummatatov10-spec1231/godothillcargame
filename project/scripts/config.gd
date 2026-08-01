@@ -12,16 +12,18 @@ var master_volume_db: float = -6.0
 
 # Трасса.
 var terrain_seed: int = 20260731
-var terrain_difficulty: float = 1.0
-var hill_height: float = 150.0
-var terrain_frequency: float = 1.0
+var terrain_difficulty: float = 1.25
+var hill_height: float = 185.0
+var terrain_frequency: float = 1.15
 var fuel_density: float = 0.36
 var coin_density: float = 0.78
+# 0 — бесконечный режим. Положительное значение задаёт финиш в метрах.
+var track_length_m: float = 0.0
 
 # Машина.
 var body_mass: float = 7.0
 var wheel_mass: float = 1.25
-var engine_torque: float = 180000.0
+var engine_torque: float = 120000.0
 var max_wheel_speed: float = 54.0
 var wheel_friction: float = 2.2
 var suspension_stiffness: float = 750.0
@@ -29,7 +31,7 @@ var suspension_damping: float = 18.0
 var suspension_rest_length: float = 58.0
 var gravity: float = BASE_GRAVITY
 var body_linear_damp: float = 0.16
-var body_angular_damp: float = 1.35
+var body_angular_damp: float = 0.58
 
 # Эволюция.
 var evolution_population_size: int = 150
@@ -40,6 +42,8 @@ var evolution_tournament_size: int = 5
 var evolution_immigrant_ratio: float = 0.05
 var evolution_timeout_sec: float = 30.0
 var evolution_idle_timeout_sec: float = 5.0
+# Первое поколение стартует почти нейтральным и не содержит готовой стратегии.
+var initial_genome_spread: float = 0.28
 var simulation_speed: float = 1.0
 var hidden_layer_count: int = 2
 var hidden_neurons: int = 16
@@ -73,6 +77,11 @@ func register_manual_result(distance_m: float, coins: int) -> bool:
 		record_coins = coins
 	save_progress()
 	return was_record
+
+func track_end_x() -> float:
+	if track_length_m <= 0.0:
+		return 1.0e30
+	return track_length_m * PIXELS_PER_METER
 
 func get_network_layers() -> Array[int]:
 	var result: Array[int] = [18]
@@ -141,6 +150,8 @@ func set_numeric_setting(setting_name: String, new_value: float) -> void:
 			fuel_density = clampf(new_value, 0.05, 1.0)
 		"coin_density":
 			coin_density = clampf(new_value, 0.05, 1.0)
+		"track_length":
+			track_length_m = clampf(new_value, 0.0, 10000.0)
 		"seed":
 			terrain_seed = int(round(new_value))
 
@@ -172,6 +183,7 @@ func get_numeric_setting(setting_name: String) -> float:
 		"terrain_frequency": result = terrain_frequency
 		"fuel_density": result = fuel_density
 		"coin_density": result = coin_density
+		"track_length": result = track_length_m
 		"seed": result = terrain_seed
 	return result
 

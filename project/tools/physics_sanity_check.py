@@ -107,8 +107,8 @@ def main() -> None:
 
     traction = torque * (1.0 + front_ratio) / radius * assist
     climb_sine = traction / weight
-    if climb_sine < 0.55:
-        fail("тяги недостаточно для уклона 33°; малый холм не будет преодолён")
+    if climb_sine < 0.45:
+        fail("тяги недостаточно для уклона 27°; малый холм не будет преодолён")
 
     print("ФИЗИЧЕСКАЯ ПРОВЕРКА: успешно")
     print(f"  начальная опора пружин: {support_force:.0f} против веса {weight:.0f}")

@@ -10,11 +10,14 @@ signal statistics_changed(
 )
 
 const CAR_SCENE: PackedScene = preload("res://scenes/Car.tscn")
+const FUEL_SCENE: PackedScene = preload("res://scenes/FuelCan.tscn")
 const STATISTICS_INTERVAL: float = 0.10
 
 var terrain: TerrainGenerator
 var vehicle_parent: Node
+var shared_fuel_root: Node2D
 var random: RandomNumberGenerator = RandomNumberGenerator.new()
+var fuel_random: RandomNumberGenerator = RandomNumberGenerator.new()
 var genomes: Array[Genome] = []
 var cars: Array[Car] = []
 var generation: int = 1
@@ -26,11 +29,16 @@ var selected_index: int = -1
 var user_selected: bool = false
 var applied_time_scale: float = -1.0
 var statistics_elapsed: float = 0.0
+var next_shared_fuel_x: float = 0.0
 
-func setup(terrain_node: TerrainGenerator, parent_for_cars: Node) -> void:
+func setup(terrain_node: TerrainGenerator, parent_for_cars: Node, parent_for_fuel: Node) -> void:
 	terrain = terrain_node
 	vehicle_parent = parent_for_cars
+	shared_fuel_root = Node2D.new()
+	shared_fuel_root.name = "ОбщиеКанистрыЭволюции"
+	parent_for_fuel.add_child(shared_fuel_root)
 	random.seed = Config.terrain_seed * 97 + 31
+	fuel_random.seed = Config.terrain_seed * 211 + 17
 	create_fresh_population()
 	_spawn_generation()
 
@@ -47,7 +55,9 @@ func _physics_process(delta: float) -> void:
 		if is_instance_valid(car):
 			current_best_distance = maxf(current_best_distance, car.max_distance_m)
 			if not car.dead:
-				if car.life_time >= Config.evolution_timeout_sec:
+				if Config.track_length_m > 0.0 and car.max_distance_m >= Config.track_length_m:
+					car.die("Финиш трассы достигнут")
+				elif car.life_time >= Config.evolution_timeout_sec:
 					car.die("Время машины истекло")
 				elif car.idle_time >= Config.evolution_idle_timeout_sec:
 					car.die("Нет прогресса")
@@ -57,6 +67,8 @@ func _physics_process(delta: float) -> void:
 						leader_index = index
 		index += 1
 	_update_leader_target(leader_index)
+	if leader_index >= 0 and is_instance_valid(cars[leader_index]):
+		_ensure_shared_fuel_ahead(cars[leader_index].body_global_position().x)
 	statistics_elapsed += delta
 	if statistics_elapsed >= STATISTICS_INTERVAL or alive_count == 0:
 		statistics_elapsed = 0.0
@@ -89,7 +101,9 @@ func create_fresh_population() -> void:
 	var layout: Array[int] = Config.get_network_layers()
 	var amount: int = 0
 	while amount < Config.evolution_population_size:
-		genomes.append(Genome.create_random(layout, random))
+		# Первое поколение не наследует знания: малый нулецентричный разброс
+		# даёт почти нейтральные действия, а стратегия появляется через мутации.
+		genomes.append(Genome.create_random(layout, random, Config.initial_genome_spread))
 		amount += 1
 	generation = 1
 	current_best_fitness = 0.0
@@ -105,6 +119,7 @@ func new_track_and_restart() -> void:
 	Config.terrain_seed = random.randi_range(1, 99999999)
 	if terrain != null:
 		terrain.rebuild(Config.terrain_seed)
+	fuel_random.seed = Config.terrain_seed * 211 + 17
 	create_fresh_population()
 	_spawn_generation()
 
@@ -133,7 +148,9 @@ func _spawn_generation() -> void:
 	selected_index = -1
 	user_selected = false
 	statistics_elapsed = 0.0
+	_clear_shared_fuel()
 	var spawn_x: float = 120.0
+	next_shared_fuel_x = spawn_x + _shared_fuel_spacing()
 	var spawn_y: float = terrain.height_at(spawn_x) - 68.0 if terrain != null else 350.0
 	var index: int = 0
 	while index < genomes.size():
@@ -153,8 +170,40 @@ func _spawn_generation() -> void:
 		car.died.connect(_on_car_died.bind(car))
 		cars.append(car)
 		index += 1
+	_ensure_shared_fuel_ahead(spawn_x + 5000.0)
 	_apply_speed_if_needed()
 	_update_target()
+
+func apply_track_length_and_restart() -> void:
+	get_tree().paused = false
+	if terrain != null:
+		terrain.rebuild(Config.terrain_seed)
+	fuel_random.seed = Config.terrain_seed * 211 + 17
+	create_fresh_population()
+	_spawn_generation()
+
+func _clear_shared_fuel() -> void:
+	if shared_fuel_root == null:
+		return
+	for fuel_node: Node in shared_fuel_root.get_children():
+		fuel_node.queue_free()
+
+func _ensure_shared_fuel_ahead(world_x: float) -> void:
+	if shared_fuel_root == null or terrain == null:
+		return
+	var desired_x: float = minf(world_x + 5000.0, Config.track_end_x())
+	while next_shared_fuel_x < desired_x:
+		var fuel_can: FuelCan = FUEL_SCENE.instantiate() as FuelCan
+		shared_fuel_root.add_child(fuel_can)
+		fuel_can.global_position = Vector2(
+			next_shared_fuel_x, terrain.height_at(next_shared_fuel_x) - 78.0
+		)
+		fuel_can.configure_shared_for_cars(38.0)
+		next_shared_fuel_x += _shared_fuel_spacing()
+
+func _shared_fuel_spacing() -> float:
+	var base_spacing: float = lerpf(6500.0, 2800.0, Config.fuel_density)
+	return fuel_random.randf_range(base_spacing * 0.85, base_spacing * 1.15)
 
 func _on_car_died(_reason: String, car: Car) -> void:
 	if car == null or not is_instance_valid(car):

@@ -6,13 +6,15 @@ var layers: Array[int] = []
 var genes: PackedFloat32Array = PackedFloat32Array()
 var fitness: float = 0.0
 
-static func create_random(layout: Array[int], random: RandomNumberGenerator) -> Genome:
+static func create_random(
+	layout: Array[int], random: RandomNumberGenerator, spread: float = 1.0
+) -> Genome:
 	var result: Genome = Genome.new()
 	result.layers = layout.duplicate()
 	result.genes.resize(NeuralNetwork.gene_count_for(layout))
 	var index: int = 0
 	while index < result.genes.size():
-		result.genes[index] = random.randf_range(-1.0, 1.0)
+		result.genes[index] = random.randf_range(-spread, spread)
 		index += 1
 	return result
 

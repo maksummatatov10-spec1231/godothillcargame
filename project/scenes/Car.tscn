@@ -8,7 +8,8 @@
 [ext_resource type="AudioStream" path="res://assets/sounds/EngineSound.ogg" id="6_engine"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(142, 54)
+# Коллизия короче спрайта: кузов не цепляется бампером за малые гребни.
+size = Vector2(112, 42)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_head"]
 radius = 15.0
@@ -23,6 +24,7 @@ continuous_cd = 2
 can_sleep = false
 
 [node name="BodyCollision" type="CollisionShape2D" parent="Chassis"]
+position = Vector2(0, -2)
 shape = SubResource("RectangleShape2D_body")
 
 [node name="ChassisSprite" type="Sprite2D" parent="Chassis"]

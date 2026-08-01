@@ -47,7 +47,7 @@ func _build_panel() -> void:
 	header.add_child(close_button)
 	outer.add_child(header)
 	var note_text: String = "Физика, сеть и состав применяются "
-	note_text += "при следующем запуске поколения."
+	note_text += "при следующем запуске поколения. Длина трассы перезапускает его сразу."
 	var note: Label = UIStyle.make_label(note_text, 12, UIStyle.MUTED)
 	outer.add_child(note)
 	var scroll: ScrollContainer = ScrollContainer.new()
@@ -136,6 +136,7 @@ func _add_track_section(parent: VBoxContainer) -> void:
 	_add_numeric(section, "Частота неровностей", "terrain_frequency", 0.35, 2.5, 0.05)
 	_add_numeric(section, "Плотность канистр", "fuel_density", 0.05, 1.0, 0.01)
 	_add_numeric(section, "Плотность монет", "coin_density", 0.05, 1.0, 0.01)
+	_add_numeric(section, "Длина трассы, м (0 = бесконечно)", "track_length", 0.0, 10000.0, 50.0)
 	_add_numeric(section, "Сид", "seed", 1.0, 99999999.0, 1.0)
 
 func _add_numeric(

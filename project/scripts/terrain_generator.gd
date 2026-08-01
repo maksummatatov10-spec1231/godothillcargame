@@ -1,7 +1,8 @@
 class_name TerrainGenerator
 extends Node2D
-## Детерминированная бесконечно наращиваемая трасса. Коллизия состоит из
-## сегментов StaticBody2D: колёса не проваливаются в вогнутый Polygon2D.
+## Детерминированная наращиваемая трасса. При длине 0 она бесконечна; при
+## положительной длине заканчивается финишем. Коллизия состоит из сегментов
+## StaticBody2D: колёса не проваливаются в вогнутый Polygon2D.
 
 const DIRT_TEXTURE: Texture2D = preload("res://assets/sprites/terrain/DirtBG.png")
 const GRASS_TEXTURE: Texture2D = preload("res://assets/sprites/terrain/Grass.png")
@@ -41,11 +42,11 @@ func rebuild(new_seed: int) -> void:
 		collision_node.queue_free()
 	surface_points.clear()
 	last_generated_x = INITIAL_LEFT
-	_append_until(INITIAL_RIGHT)
+	_append_until(minf(INITIAL_RIGHT, Config.track_end_x()))
 	_refresh_visual()
 
 func ensure_ahead(world_x: float) -> void:
-	var desired_right: float = world_x + KEEP_AHEAD
+	var desired_right: float = minf(world_x + KEEP_AHEAD, Config.track_end_x())
 	if desired_right <= last_generated_x:
 		return
 	_append_until(desired_right)
@@ -62,11 +63,19 @@ func height_at(world_x: float) -> float:
 	var hill: float = Config.hill_height
 	var long_wave: float = sin(world_x * 0.0032 * frequency + phase_a) * hill * 0.54
 	var medium_wave: float = sin(world_x * 0.0091 * frequency + phase_b) * hill * 0.26
-	var small_wave: float = sin(world_x * 0.0217 * frequency + phase_c) * hill * 0.095 * difficulty
-	var bump_wave: float = sin(world_x * 0.047 * frequency + phase_b * 1.9) * hill * 0.027 * difficulty
-	# Старт мягче, чтобы первое касание подвески не было ударом.
-	var start_blend: float = clampf((world_x + 150.0) / 700.0, 0.0, 1.0)
-	return 510.0 - (long_wave + medium_wave + small_wave + bump_wave) * start_blend
+	var small_wave: float = sin(world_x * 0.0217 * frequency + phase_c) * hill * 0.135 * difficulty
+	var bump_wave: float = sin(world_x * 0.047 * frequency + phase_b * 1.9) * hill * 0.052 * difficulty
+	# Асимметричный профиль даёт короткие подъёмы и спуски, на которых можно
+	# ошибиться с газом и перевернуться, а не только бесконечные синусоиды.
+	var ridge_phase: float = sin(world_x * 0.0135 * frequency + phase_a * 1.7)
+	var ridge_wave: float = maxf(0.0, ridge_phase) * hill * 0.16 * difficulty
+	var rough_wave: float = sin(world_x * 0.062 * frequency + phase_c * 1.3)
+	rough_wave *= hill * 0.030 * difficulty
+	# Первые метры остаются мягкими для корректной посадки подвески.
+	var start_blend: float = clampf((world_x + 150.0) / 900.0, 0.0, 1.0)
+	var terrain_offset: float = long_wave + medium_wave + small_wave
+	terrain_offset += bump_wave + ridge_wave + rough_wave
+	return 510.0 - terrain_offset * start_blend
 
 func surface_normal_at(world_x: float) -> Vector2:
 	var sample: float = 5.0
@@ -74,12 +83,15 @@ func surface_normal_at(world_x: float) -> Vector2:
 	return Vector2(slope, -1.0).normalized()
 
 func _append_until(target_x: float) -> void:
+	var capped_target: float = minf(target_x, Config.track_end_x())
+	if capped_target <= last_generated_x:
+		return
 	if surface_points.is_empty():
 		var first_point: Vector2 = Vector2(last_generated_x, height_at(last_generated_x))
 		surface_points.append(first_point)
-	while last_generated_x < target_x:
+	while last_generated_x < capped_target:
 		var previous_point: Vector2 = surface_points[surface_points.size() - 1]
-		last_generated_x += SEGMENT_WIDTH
+		last_generated_x = minf(last_generated_x + SEGMENT_WIDTH, capped_target)
 		var next_point: Vector2 = Vector2(last_generated_x, height_at(last_generated_x))
 		surface_points.append(next_point)
 		_create_collision_segment(previous_point, next_point)

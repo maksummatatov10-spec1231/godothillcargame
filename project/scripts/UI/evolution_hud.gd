@@ -88,6 +88,8 @@ func set_metrics(
 	requested_speed: float, actual_speed: float
 ) -> void:
 	generation_label.text = "Поколение: %d" % generation
+	if generation == 1:
+		generation_label.text += " · случайный старт"
 	alive_label.text = "Живы: %d / %d" % [alive, total]
 	current_best_label.text = "Лучший сейчас: %d м" % int(floor(current_best))
 	all_time_best_label.text = "Лучший за всё время: %d м" % int(floor(best_ever))

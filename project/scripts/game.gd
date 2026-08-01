@@ -41,6 +41,7 @@ var pause_menu: PauseMenu
 var evolution: EvolutionManager
 var pickup_random: RandomNumberGenerator = RandomNumberGenerator.new()
 var next_pickup_x: float = 620.0
+var next_fuel_x: float = 0.0
 var next_checkpoint_x: float = 500.0 * Config.PIXELS_PER_METER
 var coin_audio: AudioStreamPlayer
 var fuel_audio: AudioStreamPlayer
@@ -88,6 +89,8 @@ func _start_manual() -> void:
 	controller.setup(manual_car, manual_hud)
 	camera_controller.set_target(manual_car)
 	pickup_random.seed = Config.terrain_seed * 13 + 7
+	next_pickup_x = 620.0
+	next_fuel_x = _manual_fuel_spacing()
 	_spawn_manual_content_ahead()
 
 func _start_evolution() -> void:
@@ -110,7 +113,7 @@ func _start_evolution() -> void:
 	add_child(evolution)
 	evolution.target_changed.connect(_on_evolution_target_changed)
 	evolution.statistics_changed.connect(_on_evolution_statistics_changed)
-	evolution.setup(terrain, self)
+	evolution.setup(terrain, self, pickup_root)
 	evolution_hud.set_network_visible(Config.show_network)
 
 func _create_pause_menu() -> void:
@@ -137,6 +140,8 @@ func _process(_delta: float) -> void:
 	if mode == Mode.MANUAL and manual_car != null and is_instance_valid(manual_car):
 		_spawn_manual_content_ahead()
 		_cleanup_old_content()
+		if Config.track_length_m > 0.0 and manual_car.max_distance_m >= Config.track_length_m:
+			manual_car.die("Финиш трассы достигнут")
 		manual_hud.set_stats(
 			manual_car.max_distance_m, manual_car.speed_kmh(),
 			manual_car.collected_coins, Config.record_distance_m
@@ -159,16 +164,23 @@ func _spawn_manual_content_ahead() -> void:
 	if manual_car == null or terrain == null:
 		return
 	var desired_x: float = manual_car.body_global_position().x + 5000.0
+	desired_x = minf(desired_x, Config.track_end_x())
 	while next_pickup_x < desired_x:
-		var density_roll: float = pickup_random.randf()
-		if density_roll < Config.fuel_density * 0.17:
-			_spawn_fuel(next_pickup_x)
-		elif density_roll < Config.coin_density:
+		if pickup_random.randf() < Config.coin_density:
 			_spawn_coin(next_pickup_x)
 		next_pickup_x += pickup_random.randf_range(82.0, 180.0)
+	# Канистры идут по собственной шкале дистанции, поэтому генератор не может
+	# случайно собрать несколько штук в одном месте.
+	while next_fuel_x < desired_x:
+		_spawn_fuel(next_fuel_x)
+		next_fuel_x += _manual_fuel_spacing()
 	while next_checkpoint_x < desired_x:
 		_spawn_checkpoint(next_checkpoint_x)
 		next_checkpoint_x += 500.0 * Config.PIXELS_PER_METER
+
+func _manual_fuel_spacing() -> float:
+	var base_spacing: float = lerpf(6500.0, 2800.0, Config.fuel_density)
+	return pickup_random.randf_range(base_spacing * 0.85, base_spacing * 1.15)
 
 func _spawn_coin(world_x: float) -> void:
 	var coin: Coin = COIN_SCENE.instantiate() as Coin
@@ -269,6 +281,8 @@ func _new_track() -> void:
 func _on_evolution_setting_changed(setting_name: String, _value: float) -> void:
 	if setting_name == "show_network" and evolution_hud != null:
 		evolution_hud.set_network_visible(Config.show_network)
+	if setting_name == "track_length" and evolution != null:
+		evolution.apply_track_length_and_restart()
 
 func _on_evolution_target_changed(target_car: Car, network: NeuralNetwork) -> void:
 	if target_car == null:
